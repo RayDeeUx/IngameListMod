@@ -13,7 +13,7 @@ bool requestfinished = false;
 bool partitied = false;
 int listtype;
 
-EventListener<web::WebTask> webreq;
+async::TaskHolder<WebResponse> webreq;
 
 class DemonClass {
 public:
@@ -110,9 +110,16 @@ void getRequest(CCLayer* self, GJGameLevel* level, CCLabelBMFont* thelabel, bool
     std::string url = pointercrate ? "https://api.aredl.net/api/aredl/levels/" + std::to_string(lvlID) + "?two_player=false&records=false&creators=false&verification=false&packs=false" : "https://challengelist.gd/api/v2/demons/listed/?name=" + std::string(lvlname);
     if (platformer) url = "https://pemonlist.com/api/level/" + std::to_string(lvlID);
     if (platformer) positionstring = "placement";
+    
+    // think outside box: set label beforehand?
+    thelabel->setString("???");
+    infoButton(self, thelabel, true);
 
-    webreq.bind([self, thelabel, pointercrate, level, platformer, positionstring, lvlID](web::WebTask::Event* e) mutable {
-        if (web::WebResponse* res = e->getValue()) {
+    auto req = web::WebRequest();
+
+    webreq.spawn(
+        req.get(url),
+        [self, thelabel, pointercrate, level, platformer, positionstring, lvlID](WebResponse res) mutable {
             std::string resultat = res->string().unwrap();
             log::info("{}\n\n", resultat);
             std::string result;
@@ -170,14 +177,8 @@ void getRequest(CCLayer* self, GJGameLevel* level, CCLabelBMFont* thelabel, bool
                 infoButton(self, thelabel);
                 cachedPositions.insert({ level->m_levelID, -1 });
             }
-        } else if (e->isCancelled()) {
-            thelabel->setString("???");
-            infoButton(self, thelabel, true);
         }
-    });
-
-    auto req = web::WebRequest();
-    webreq.setFilter(req.get(url));
+    );
 
     return;
 }
