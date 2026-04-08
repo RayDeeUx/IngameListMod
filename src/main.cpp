@@ -119,7 +119,7 @@ void getRequest(CCLayer* self, GJGameLevel* level, CCLabelBMFont* thelabel, bool
 
     webreq.spawn(
         req.get(url),
-        [self, thelabel, pointercrate, level, platformer, positionstring, lvlID](WebResponse res) mutable {
+        [self, thelabel, pointercrate, level, platformer, positionstring, lvlID](geode::utils::web::WebResponse res) mutable {
             std::string resultat = res.string().unwrapOr("???");
             log::info("{}\n\n", resultat);
             std::string result;
