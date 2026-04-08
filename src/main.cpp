@@ -114,7 +114,9 @@ void getRequest(CCLayer* self, GJGameLevel* level, CCLabelBMFont* thelabel, bool
     
     // think outside box: set label beforehand?
     thelabel->setString("???");
+    thelabel->setID("placement-label"_spr);
     CCMenu* onlyRemoveOnSuccess = infoButton(self, thelabel, true);
+    onlyRemoveOnSuccess->setID("position-failure-menu"_spr);
 
     auto req = web::WebRequest();
 
