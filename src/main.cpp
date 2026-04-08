@@ -13,7 +13,7 @@ bool requestfinished = false;
 bool partitied = false;
 int listtype;
 
-async::TaskHolder<WebResponse> webreq;
+async::TaskHolder<geode::utils::web::WebResponse> webreq;
 
 class DemonClass {
 public:
