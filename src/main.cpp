@@ -64,7 +64,7 @@ void DemonClass::openLink(CCObject* ret) {
     }
 }
 
-void infoButton(CCLayer* layer, CCLabelBMFont* thelabel, bool internetFail = false) {
+CCMenu* infoButton(CCLayer* layer, CCLabelBMFont* thelabel, bool internetFail = false) {
     CCPoint position = { thelabel->getPositionX() - 122, thelabel->getPositionY() - 81 };
     CCSprite* buttonbg = CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png");
     auto button = CCMenuItemSpriteExtra::create(buttonbg, layer, menu_selector(DemonClass::infobox));
@@ -74,6 +74,7 @@ void infoButton(CCLayer* layer, CCLabelBMFont* thelabel, bool internetFail = fal
     menu->addChild(button);
     menu->setPosition(position);
     layer->addChild(menu);
+    return menu;
 }
 
 void DemonClass::infobox(CCObject* sender) {
@@ -113,13 +114,13 @@ void getRequest(CCLayer* self, GJGameLevel* level, CCLabelBMFont* thelabel, bool
     
     // think outside box: set label beforehand?
     thelabel->setString("???");
-    infoButton(self, thelabel, true);
+    CCMenu* onlyRemoveOnSuccess = infoButton(self, thelabel, true);
 
     auto req = web::WebRequest();
 
     webreq.spawn(
         req.get(url),
-        [self, thelabel, pointercrate, level, platformer, positionstring, lvlID](geode::utils::web::WebResponse res) mutable {
+        [self = geode::Ref(self), thelabel = geode::Ref(thelabel), pointercrate, level = geode::Ref(level), platformer, positionstring, lvlID, onlyRemoveOnSuccess = geode::Ref(onlyRemoveOnSuccess)](geode::utils::web::WebResponse res) mutable {
             std::string resultat = res.string().unwrapOr("???");
             log::info("{}\n\n", resultat);
             std::string result;
@@ -132,8 +133,6 @@ void getRequest(CCLayer* self, GJGameLevel* level, CCLabelBMFont* thelabel, bool
             auto parseResult = matjson::parse(result);
             if (!parseResult) {
                 log::info("Failed to parse JSON: {}", parseResult.unwrapErr());
-                thelabel->setString("???");
-                infoButton(self, thelabel, true);
                 return;
             }
             childJson = parseResult.unwrap();
@@ -150,6 +149,7 @@ void getRequest(CCLayer* self, GJGameLevel* level, CCLabelBMFont* thelabel, bool
                 thelabel->setString("N/A");
                 infoButton(self, thelabel);
                 cachedPositions.insert({ level->m_levelID, -1 });
+                onlyRemoveOnSuccess->removeMeAndCleanup();
                 return;
             }
 
@@ -159,7 +159,6 @@ void getRequest(CCLayer* self, GJGameLevel* level, CCLabelBMFont* thelabel, bool
                 if (!positionResult) {
                     log::info("Expected position to be an int");
                     thelabel->setString("???");
-                    infoButton(self, thelabel, true);
                     return;
                 }
                 int position = positionResult.unwrap();
@@ -172,10 +171,12 @@ void getRequest(CCLayer* self, GJGameLevel* level, CCLabelBMFont* thelabel, bool
                 pos->setObject(CCBool::create(platformer), "platformer");
                 createButton(self, thelabel, pos, pointercrate, platformer);
                 cachedPositions.insert({ level->m_levelID, position });
+                onlyRemoveOnSuccess->removeMeAndCleanup();
             } else {
                 thelabel->setString("N/A");
                 infoButton(self, thelabel);
                 cachedPositions.insert({ level->m_levelID, -1 });
+                onlyRemoveOnSuccess->removeMeAndCleanup();
             }
         }
     );
